@@ -1,4 +1,3 @@
-```groovy
 pipeline {
     agent any
 
@@ -64,19 +63,14 @@ pipeline {
 
     post {
         success {
-            echo "======================================"
             echo "PIPELINE COMPLETED SUCCESSFULLY!"
-            echo "======================================"
             echo "Docker Image: %IMAGE_NAME%:%IMAGE_TAG%"
             echo "Kubernetes deployment completed successfully!"
         }
 
         failure {
-            echo "======================================"
             echo "PIPELINE FAILED!"
-            echo "======================================"
             echo "Please check the Jenkins console output."
         }
     }
 }
-```
