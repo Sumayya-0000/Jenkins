@@ -1,57 +1,82 @@
+```groovy
 pipeline {
     agent any
 
     environment {
+        DOCKER_USERNAME = "sumayyasadaf"
+        DOCKER_PASSWORD = "Sumayya@123"
+
         IMAGE_NAME = "sumayyasadaf/registration-form"
         IMAGE_TAG = "latest"
     }
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                echo "Checking out source code..."
+                checkout scm
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                echo "Build Docker Image"
+                echo "Building Docker Image..."
                 bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
 
         stage('Docker Login') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
-                    bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
-                }
+                echo "Logging in to Docker Hub..."
+
+                bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
             }
         }
 
         stage('Push Docker Image to Docker Hub') {
             steps {
-                echo "Push Docker Image to Docker Hub"
+                echo "Pushing Docker Image to Docker Hub..."
+
                 bat "docker push %IMAGE_NAME%:%IMAGE_TAG%"
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo "Deploy to Kubernetes"
+                echo "Deploying application to Kubernetes..."
+
                 bat "kubectl apply -f deployment.yaml --validate=false"
                 bat "kubectl apply -f service.yaml"
+            }
+        }
+
+        stage('Verify Kubernetes Deployment') {
+            steps {
+                echo "Checking Kubernetes resources..."
+
+                bat "kubectl get deployments"
+                bat "kubectl get pods"
+                bat "kubectl get services"
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo "======================================"
+            echo "PIPELINE COMPLETED SUCCESSFULLY!"
+            echo "======================================"
+            echo "Docker Image: %IMAGE_NAME%:%IMAGE_TAG%"
+            echo "Kubernetes deployment completed successfully!"
         }
 
         failure {
-            echo 'Pipeline failed. Please check the logs.'
+            echo "======================================"
+            echo "PIPELINE FAILED!"
+            echo "======================================"
+            echo "Please check the Jenkins console output."
         }
     }
 }
+```
