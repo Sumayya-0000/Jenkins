@@ -3,20 +3,15 @@ pipeline {
 
     environment {
         IMAGE_NAME = "sumayyasadaf/registration-form"
+        IMAGE_TAG = "latest"
     }
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %IMAGE_NAME%:%BUILD_NUMBER% ."
-                bat "docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest"
+                echo "Build Docker Image"
+                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
 
@@ -34,11 +29,29 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push Docker Image to Docker Hub') {
             steps {
-                bat "docker push %IMAGE_NAME%:%BUILD_NUMBER%"
-                bat "docker push %IMAGE_NAME%:latest"
+                echo "Push Docker Image to Docker Hub"
+                bat "docker push %IMAGE_NAME%:%IMAGE_TAG%"
             }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo "Deploy to Kubernetes"
+                bat "kubectl apply -f deployment.yaml --validate=false"
+                bat "kubectl apply -f service.yaml"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Please check the logs.'
         }
     }
 }
